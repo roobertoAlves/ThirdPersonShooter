@@ -1,83 +1,133 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using UnityEngine.InputSystem;
 public class PlayerController : MonoBehaviour
 {
-      #region Input
-   [SerializeField] private InputManager _inputManager;
-    #endregion
-    
-    #region Components
+      [Header("Components")]
+    [Space(15)]
+    [SerializeField] private InputManager _inputHandler;
+    private CharacterController _characterController;
+    private Animator _animator;
 
-    [SerializeField] private GameObject _mainCamera;
-    [SerializeField] private CharacterController _charControl;
-    #endregion
+    [Header("Player Parameters")]
+    [Space(15)]
+    [SerializeField] private float _walkSpeed;
+    [SerializeField] private float _runSpeed;
+    [Range(1,20),SerializeField]private float _rotationFactorPerFrame;
+    private Vector3 _currentMove;
+    private Vector2 _currentMoveInput;
+    private Vector3 _currentRunMove;
+    private Vector3 _appliedMove;
+    private bool _isMovePressed;
+    private bool _isRunPressed;
 
-    #region CAMERA 
+    protected InputManager Manager { get { return _inputHandler; }}
 
-    private Vector2 _viewInput;
-    [SerializeField] private Transform _playerBody;
-    [SerializeField, Range(1,20)] private float _mouseSense; 
-    private float _camXRotation = 0f;
-
-    #endregion
-
-    #region Character Movement
-    
-    private Vector2 _moveInput;
-    [SerializeField] private float _charSpeed;
-
-    #endregion
-
-    private Vector2 _walkDirection;
-
-    private void Awake()
+    private void Awake() 
     {
+        _animator = GetComponent<Animator>();
+        _characterController = GetComponent<CharacterController>();
+        //Cursor.lockState = CursorLockMode.Locked;
+        //Cursor.visible = false;
 
-        Cursor.visible = false;
-        _charControl = GetComponent<CharacterController>();
-
-        #region INPUT ASSIGNMENT
-        _inputManager.GameControls.Player.Walk.performed += ctx =>_moveInput = ctx.ReadValue<Vector2>();
-        _inputManager.GameControls.Player.Walk.canceled += ctx => _moveInput = Vector2.zero;
-
-        _inputManager.GameControls.Player.View.performed += ctx => _viewInput = ctx.ReadValue<Vector2>();
-
-
-
-        #endregion
     }
 
+    private void Start() 
+    {
+         #region Input Settup
+
+
+        Manager.GameControls.Player.Walk.performed += OnMovementInput;
+        Manager.GameControls.Player.Walk.canceled += OnMovementInput;
+
+        Manager.GameControls.Player.Run.started += OnRunInput;
+       Manager.GameControls.Player.Run.canceled += OnRunInput;  
+
+
+
+
+        #endregion    
+    }
     private void Update() 
     {
-        Walk();
+       HandleGravity();
+       HandleRotation();
+       WalkAndRun();
+
+       _appliedMove.z = _isRunPressed ? _currentMoveInput.y * _runSpeed : _currentMoveInput.y;
+       _appliedMove.x = _isRunPressed ? _currentMoveInput.x * _runSpeed : _currentMoveInput.x;
+
+       if(!_isRunPressed && _isMovePressed)
+       {
+            _appliedMove.x = _currentMoveInput.x * _walkSpeed;
+            _appliedMove.z = _currentMoveInput.y * _walkSpeed; 
+       }
+
+       _characterController.Move(_appliedMove * Time.deltaTime);
+
+
+        Vector3 animationInput;
+
+        animationInput.x = _appliedMove.x;
+        animationInput.z = _appliedMove.z;
+        Manager.VectorAnimationSpeedX = animationInput.x;
+        Manager.VectorAnimationSpeedY = animationInput.z;
     }
 
-    #region CHARACTER METHODS
-
-    private void Walk()
+    private void HandleGravity()
     {
-        float speedX = _moveInput.x * _charSpeed * Time.deltaTime;
-        float speedZ = _moveInput.y * _charSpeed * Time.deltaTime;
-
-        Vector3 movement = new Vector3(speedX, 0, speedZ);
-
-        movement = transform.TransformDirection(movement);
-
-        _charControl.Move(movement);
-
+        if(_characterController.isGrounded)
+        {
+            float  groundedGravity = -.05f;
+            _appliedMove.y = groundedGravity;
+        }
+        else 
+        {
+            float gravity = -9.8f;
+            _appliedMove.y += gravity;
+        }
     }
 
-
-    private void MovePlayer()
+    private void HandleRotation()
     {
-        _walkDirection = _inputManager.GameControls.Player.Walk.ReadValue<Vector2>();
+        Vector3 positionToLookAt;
 
-        Vector3 newDirection = new Vector3(_walkDirection.x, 0, _walkDirection.y);
+        positionToLookAt.x = _currentMove.x;
+        positionToLookAt.y = 0.0f;
+        positionToLookAt.z = _currentMove.z;
 
-        _charControl.Move(newDirection * (_charSpeed * Time.deltaTime)); 
+        Quaternion currentRotation = transform.rotation;
+
+       if(_isMovePressed)
+       {
+         Quaternion targetRotation = Quaternion.LookRotation(positionToLookAt);
+         transform.rotation = Quaternion.Slerp(currentRotation, targetRotation, _rotationFactorPerFrame * Time.deltaTime);  
+       
+       }
+    }
+  
+    #region Input Methods
+
+    private void OnMovementInput (InputAction.CallbackContext ctx)
+    {
+        _currentMoveInput = ctx.ReadValue<Vector2>();
+
+        _isMovePressed = _currentMoveInput.x != 0 || _currentMoveInput.y != 0;
     }
 
-    #endregion
+    private void OnRunInput(InputAction.CallbackContext ctx)
+    {
+        _isRunPressed = ctx.ReadValueAsButton();
+    } 
+
+     #endregion
+    private void WalkAndRun()
+    {
+        _currentMove = new Vector3(_currentMoveInput.x, 0f, _currentMoveInput.y);
+        _currentMove.y = 0f;
+        _currentRunMove = new Vector3(_currentMoveInput.x, 0f, _currentMoveInput.y);
+        _currentRunMove.y = 0f;
+
+    }
 }

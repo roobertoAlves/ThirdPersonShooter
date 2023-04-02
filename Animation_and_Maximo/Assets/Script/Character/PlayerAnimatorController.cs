@@ -7,6 +7,8 @@ public class PlayerAnimatorController : MonoBehaviour
    [SerializeField] private Animator _animator;
    [SerializeField] private InputManager _inputManager;
 
+  protected InputManager Manager { get { return _inputManager; }}
+
 
    #region  MOVE INPUT
 
@@ -22,13 +24,13 @@ public class PlayerAnimatorController : MonoBehaviour
    }
    private void UpdateValues()
    {
-       _inputY = _inputManager.GameControls.Player.Walk.ReadValue<Vector2>().y;
-       _inputX = _inputManager.GameControls.Player.Walk.ReadValue<Vector2>().x;
+      _inputX = Manager.VectorAnimationSpeedX;
+      _inputY = Manager.VectorAnimationSpeedY;
    }
-
+  
    private void UpdateAnimations()
    {
-     _animator.SetFloat("InputX", _inputX);
+     _animator.SetFloat("InputX",   _inputX);
      _animator.SetFloat("InputY", _inputY);
    }
 }

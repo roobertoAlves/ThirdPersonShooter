@@ -5,10 +5,16 @@ using UnityEngine;
 public class InputManager : MonoBehaviour
 {
     [SerializeField] private GameControls _gameControls;
+    private Vector3 _vectorAnimation;
 
 
+    public float VectorAnimationSpeedY {get { return _vectorAnimation.y; } set { _vectorAnimation.y = value; }}
+    public float VectorAnimationSpeedX {get { return _vectorAnimation.x; } set { _vectorAnimation.x = value; }}
     private void Awake()
     {
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked; 
+        
         #region INPUT ASSIGNMENT
 
         _gameControls = new GameControls();

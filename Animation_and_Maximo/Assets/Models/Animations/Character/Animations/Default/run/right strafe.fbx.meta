@@ -17,11 +17,7 @@ ModelImporter:
     removeConstantScaleCurves: 1
     motionNodeName: 
     rigImportErrors: 
-    rigImportWarnings: "Copied Avatar Rig Configuration mis-match. Bone length in
-      copied configuration does not match position in animation file:\n\t'Thigh_L'
-      : position error = 10982.586914 mm\n\t'calf_l' : position error = 39682.554688
-      mm\n\t'Foot_L' : position error = 37477.761719 mm\n\t'ball_l' : position error
-      = 11213.844727 mm\n"
+    rigImportWarnings: 
     animationImportErrors: 
     animationImportWarnings: 
     animationRetargetingWarnings: 
@@ -37,7 +33,7 @@ ModelImporter:
     extraUserProperties: []
     clipAnimations:
     - serializedVersion: 16
-      name: Run Right Strafe
+      name: Right strafe run
       takeName: mixamo.com
       internalID: -203655887218126122
       firstFrame: 0
