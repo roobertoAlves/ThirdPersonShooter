@@ -77,10 +77,11 @@ public class PlayerController : MonoBehaviour
 
     private void HandleGravity()
     {
-        if(_characterController.isGrounded)
+        if(_characterController.isGrounded && _appliedMove.y < 0f)
         {
             float  groundedGravity = -.05f;
             _appliedMove.y = groundedGravity;
+            _appliedMove.y = 0f;
         }
         else 
         {
