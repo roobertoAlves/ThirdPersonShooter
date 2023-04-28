@@ -14,6 +14,7 @@ public class PlayerController : MonoBehaviour
     [Space(15)]
     [SerializeField] private float _walkSpeed;
     [SerializeField] private float _runSpeed;
+    [SerializeField] private float  _jumpForce;
     [Range(1,20),SerializeField]private float _rotationFactorPerFrame;
     private Vector3 _currentMove;
     private Vector2 _currentMoveInput;
@@ -21,6 +22,18 @@ public class PlayerController : MonoBehaviour
     private Vector3 _appliedMove;
     private bool _isMovePressed;
     private bool _isRunPressed;
+    private bool _isJumpPressed;
+
+    [Header("Gravity")]
+    [Space(15)]
+
+    [SerializeField] private float _gravityScale = -9.81f;
+    [SerializeField] private float _gravityMultiplier = 1f;
+
+    private float _velocityY;
+
+    public bool JumpPressed {get {return _isJumpPressed; } set {_isJumpPressed = value;}}
+    public CharacterController CharacterControl {get {return _characterController; } set {_characterController = value;}}
 
     protected InputManager Manager { get { return _inputHandler; }}
 
@@ -42,7 +55,10 @@ public class PlayerController : MonoBehaviour
         Manager.GameControls.Player.Walk.canceled += OnMovementInput;
 
         Manager.GameControls.Player.Run.started += OnRunInput;
-       Manager.GameControls.Player.Run.canceled += OnRunInput;  
+        Manager.GameControls.Player.Run.canceled += OnRunInput;  
+
+        Manager.GameControls.Player.Jump.performed += OnJumpInput;
+        Manager.GameControls.Player.Jump.canceled += OnJumpInput;
 
 
 
@@ -51,6 +67,7 @@ public class PlayerController : MonoBehaviour
     }
     private void Update() 
     {
+        _appliedMove.y = _velocityY;
        HandleGravity();
        HandleRotation();
        WalkAndRun();
@@ -73,20 +90,18 @@ public class PlayerController : MonoBehaviour
         animationInput.z = _appliedMove.z;
         Manager.VectorAnimationSpeedX = animationInput.x;
         Manager.VectorAnimationSpeedY = animationInput.z;
+
     }
 
     private void HandleGravity()
     {
-        if(_characterController.isGrounded && _appliedMove.y < 0f)
+        if(_characterController.isGrounded &&  !_isJumpPressed)
         {
-            float  groundedGravity = -.05f;
-            _appliedMove.y = groundedGravity;
-            _appliedMove.y = 0f;
+            _velocityY = -0.05f;
         }
-        else 
+        else if(!_characterController.isGrounded && !_isJumpPressed)
         {
-            float gravity = -9.8f;
-            _appliedMove.y += gravity;
+            _velocityY = _gravityScale * _gravityMultiplier * Time.deltaTime;
         }
     }
 
@@ -110,7 +125,7 @@ public class PlayerController : MonoBehaviour
   
     #region Input Methods
 
-    private void OnMovementInput (InputAction.CallbackContext ctx)
+    private void OnMovementInput(InputAction.CallbackContext ctx)
     {
         _currentMoveInput = ctx.ReadValue<Vector2>();
 
@@ -122,7 +137,24 @@ public class PlayerController : MonoBehaviour
         _isRunPressed = ctx.ReadValueAsButton();
     } 
 
+    private void OnJumpInput(InputAction.CallbackContext ctx)
+    {
+        _isJumpPressed = ctx.ReadValueAsButton();
+
+        if(_characterController.isGrounded && _isJumpPressed)
+        {
+            _appliedMove.y = _jumpForce;
+
+            if(!_characterController.isGrounded)
+            {
+                _appliedMove.y = _velocityY;
+            }
+        }
+
+    }
      #endregion
+
+
     private void WalkAndRun()
     {
         _currentMove = new Vector3(_currentMoveInput.x, 0f, _currentMoveInput.y);
